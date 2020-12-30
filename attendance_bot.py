@@ -1,11 +1,15 @@
-from discord.ext.commands import Bot 
+from discord.ext.commands import Bot, has_permissions
+from discord import File
 from time import localtime, strftime
-import xlsxwriter
+from xlsxwriter import Workbook
 import os
+import io
+
 bot = Bot(command_prefix='!')
 
 house_attendees = {}
 logging = False
+
 
 def log_channel_change(member_id, channel, log_string):
     house = str(channel.category)
@@ -18,7 +22,9 @@ def log_channel_change(member_id, channel, log_string):
         house_attendees[house][table][member_id] = ""
     house_attendees[house][table][member_id] += " / " + log_string
 
+
 @bot.command(name='startdinner')
+@has_permissions(administrator=True)
 async def start_logging(context):
     global house_attendees
     global logging
@@ -26,12 +32,17 @@ async def start_logging(context):
     logging = True
     await context.send('Started Logging')
 
+
 @bot.command(name='enddinner')
+@has_permissions(administrator=True)
 async def stop_logging(context):
     await context.send('Stopped Logging')
     global logging
     logging = False
-    wb = xlsxwriter.Workbook("Dinner Attendance " + strftime("%m-%d %H:%M",localtime()) + ".xlsx")
+    
+    output = io.BytesIO()
+    wb = Workbook(output, {'in_memory': True})
+    
     global house_attendees
     for house in house_attendees:
         prefrosh = set()
@@ -45,11 +56,15 @@ async def stop_logging(context):
                 if "Prefrosh" in [r.name for r in member.roles]:
                     prefrosh.add(member.display_name + "(" + str(member) + ")")
         worksheet = wb.add_worksheet(house)
-        worksheet.write_column(0,0, ["All Prefrosh"] + list(prefrosh))
+        worksheet.write_column(0, 0, ["All Prefrosh"] + list(prefrosh))
         for i,table in enumerate(table_attendance.keys()):
-            worksheet.write_column(0, i+1, [table] + table_attendance[table])
+            worksheet.write_column(0, i + 1, [table] + table_attendance[table])
     wb.close()
-    await context.send('Wrote lists to spreadsheet')
+
+    output.seek(0)
+    await context.send(content="Sending you the Excel workbook now!", 
+                       file=File(fp=output, 
+                                 filename="Dinner Attendance " + strftime("%m-%d %H:%M",localtime()) + ".xlsx"))
 
 
 @bot.event
@@ -63,5 +78,6 @@ async def on_voice_state_update(member, before, after):
         log_channel_change(member.id, before.channel, "Left At " + strftime("%H:%M", localtime()))
     if after.channel is not None:
         log_channel_change(member.id, after.channel, "Joined At " + strftime("%H:%M", localtime()))
+
 
 bot.run(os.getenv('DISCORD_TOKEN'))
