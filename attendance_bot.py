@@ -1,6 +1,7 @@
 from discord.ext.commands import Bot 
 from time import localtime, strftime
 import xlsxwriter
+import os
 bot = Bot(command_prefix='!')
 
 house_attendees = {}
@@ -63,4 +64,4 @@ async def on_voice_state_update(member, before, after):
     if after.channel is not None:
         log_channel_change(member.id, after.channel, "Joined At " + strftime("%H:%M", localtime()))
 
-bot.run('NzkzMzQ4NzQxNjMyNzUzNjk0.X-q9lw.u4iFwBxd1R_jO6CHBNFmqG8y3To')
+bot.run(os.getenv('DISCORD_TOKEN'))

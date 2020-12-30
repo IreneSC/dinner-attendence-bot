@@ -1,2 +1,4 @@
 discord.py
 xlsxwriter
+os
+time
