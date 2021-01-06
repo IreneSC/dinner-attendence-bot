@@ -1,5 +1,2 @@
 discord.py
 xlsxwriter
-os
-time
-io
