@@ -50,11 +50,15 @@ async def stop_logging(context):
         for table in house_attendees[house]:
             table_attendance[table] = []
             for member_id in house_attendees[house][table]:
-                member = await context.guild.fetch_member(member_id)
-                print("Fetched Member", member.display_name)
-                table_attendance[table].append(member.display_name + house_attendees[house][table][member.id])
-                if "Prefrosh" in [r.name for r in member.roles]:
-                    prefrosh.add(member.display_name + "(" + str(member) + ")")
+                try:
+                    member = await context.guild.fetch_member(member_id)
+                    print("Fetched Member", member.display_name)
+                    table_attendance[table].append(member.display_name + house_attendees[house][table][member.id])
+                    if "Prefrosh" in [r.name for r in member.roles]:
+                        prefrosh.add(member.display_name + "(" + str(member) + ")")
+                except:
+                    print("That prefrosh either changed roles or left the server.")
+                    continue
         worksheet = wb.add_worksheet(house)
         worksheet.write_column(0, 0, ["All Prefrosh"] + list(prefrosh))
         for i,table in enumerate(table_attendance.keys()):
